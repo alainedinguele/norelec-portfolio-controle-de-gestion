@@ -1,0 +1,6 @@
+"produit_id","nom_produit","categorie","cout_unitaire"
+"1","Composant A","Composants","12.5"
+"2","Composant B","Composants","18.9"
+"3","Module X","Modules","45"
+"4","Module Y","Modules","62.3"
+"5","Kit Assemblage","Kits","28.75"

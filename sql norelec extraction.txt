@@ -1,0 +1,118 @@
+
+-- Purpose : Build a small sales database (products, clients, sales, budget)
+
+
+DROP TABLE IF EXISTS Produits ;
+
+Create Table Produits  ( 
+produit_id  INTEGER primary key,
+nom_produit TEXT NOT NULL,
+categorie TEXT,
+cout_unitaire REAL
+);
+INSERT INTO produits ( produit_id, nom_produit, categorie, cout_unitaire) VALUES
+(1,'Composant A','Composants',12.50),
+(2,'Composant B','Composants',18.90),
+(3,'Module X','Modules',45.00),
+(4,'Module Y','Modules',62.30),
+(5,'Kit Assemblage','Kits',28.75);
+SELECT*FROM produits;
+
+DROP TABLE IF EXISTS clients;
+
+Create Table clients (
+client_id INTEGER primary key,
+nom_client TEXT NOT NULL,
+secteur TEXT,
+region TEXT,
+charge_compte TEXT
+);
+INSERT INTO clients (client_id, nom_client, secteur, region, charge_compte) VALUES
+(1,'Dupont Industries','Industrie','Ile-de-France','Marie Lefèvre'),
+(2,'Bertrand SA','Distribution','Auvergne-Rhone-Alpes','Marie Lefèvre'),
+(3,'Girard Tech','Technologie','Ile-de-France','Thomas Petit'),
+(4,'Lemoine & Fils','Industrie','Nouvelle-Aquitaine','Thomas Petit'),
+(5,'Rousseau Group','Distribution','Auvergne-Rhone-Alpes','Marie Lefèvre');
+SELECT*FROM clients;
+
+DROP TABLE IF EXISTS ventes;
+
+CREATE TABLE ventes (
+vente_id INTEGER PRIMARY KEY,
+date_vente TEXT NOT NULL,
+produit_id INTEGER,
+client_id INTEGER,
+quantite INTEGER,
+prix_unitaire REAL,
+FOREIGN KEY (produit_id) REFERENCES produits(produit_id),
+FOREIGN KEY (client_id) REFERENCES clients(client_id)
+);
+INSERT INTO ventes (vente_id, date_vente, produit_id, client_id, quantite, prix_unitaire) VALUES
+(1,'2025-01-15',1,1,50,12.50),
+(2,'2025-01-20',3,2,10,45.00),
+(3,'2025-02-05',2,3,30,18.90),
+(4,'2025-02-18',4,1,15,62.30),
+(5,'2025-03-02',1,4,40,12.50),
+(6,'2025-03-10',5,5,8,28.75),
+(7,'2025-03-22',3,2,12,45.00),
+(8,'2025-03-28',2,3,25,18.90);
+SELECT*FROM ventes;
+
+SELECT
+    v.date_vente,
+    c.nom_client,
+    p.nom_produit,
+    v.quantite,
+    v.prix_unitaire,
+    ROUND(v.quantite*v.prix_unitaire,2) AS montant_total
+FROM ventes v
+JOIN clients c ON v.client_id = c.client_id
+JOIN produits p ON  v.produit_id = p.produit_id;
+
+SELECT 
+    c.nom_client,
+    SUM(v.quantite * v.prix_unitaire) AS ca_total
+FROM ventes v
+JOIN clients c ON v.client_id = c.client_id
+GROUP BY c.nom_client
+ORDER BY ca_total DESC;
+
+SELECT
+strftime('%Y-%m', v.date_vente) AS mois,
+ROUND(SUM(v.quantite* v.prix_unitaire),2) AS ca_total
+FROM ventes v
+GROUP BY mois
+ORDER BY mois;
+
+DROP TABLE IF EXISTS budget;
+CREATE TABLE budget(
+      budget_id INTEGER PRIMARY KEY,
+	  mois TEXT NOT NULL,
+	  produit_id INTEGER,
+	  ca_budget REAL,
+	  FOREIGN KEY(produit_id) REFERENCES produits(produit_id)
+	  );
+      INSERT INTO budget(budget_id, mois, produit_id, ca_budget) VALUES
+	  (1, '2025-01', 1, 700.00),
+      (2, '2025-01', 3, 400.00),
+      (3, '2025-02', 2, 550.00),
+      (4, '2025-02', 4, 900.00),
+      (5, '2025-03', 1, 600.00),
+      (6, '2025-03', 5, 300.00),
+      (7, '2025-03', 3, 550.00);
+      SELECT*FROM budget;
+      
+      SELECT
+	  r.mois,
+	  ROUND(r.ca_reel, 2) AS ca_reel,
+	  ROUND(b.ca_budget, 2) AS ca_budget,
+	  ROUND(r.ca_reel - b.ca_budget, 2) AS ecart
+	  FROM
+	  (SELECT strftime('%Y-%m', v.date_vente) AS mois, SUM(quantite * prix_unitaire) AS ca_reel
+	  FROM ventes v
+	  GROUP BY mois) r
+	  JOIN
+	  (SELECT mois, SUM(ca_budget) AS  ca_budget
+	  FROM budget
+	  GROUP BY  mois) b
+	  ON r.mois = b.mois;
